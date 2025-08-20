@@ -1,0 +1,166 @@
+---
+title: "Aplicación de conceptos de R"
+author: "Tatiana Casallas Marin"
+date: "18/08/2025"
+output:
+  pdf_document:
+    latex_engine: xelatex
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    pandoc_args:
+    - "--variable"
+    - "toc-title=Tabla de contenido"
+header-includes:
+- \usepackage{tocloft}
+- \renewcommand{\cftdot}{.}
+- \renewcommand{\cftdotsep}{1}
+---
+
+install_tinytex() 
+install.packages("tidyverse")
+
+# Contexto
+
+Un concesionario desea perfilar a sus clientes con el fin de mejorar sus estrategias en ventas. Para ello, ha creado una tabla que contiene información sobre aspectos socieconómicos de sus clientes.   
+El Objetivo de esta actividad consiste en practicar el uso de herramientas del lenguaje de programación R para analizar la base de datos denominada *base_concesionario*, y generar un informe que de cuenta de los hallazgos, metodologías y exploración de los datos.
+
+# Actividades
+
+##  Análisis exploratorio de la base de datos
+
+a. Cargar la base de datos denominada *base_concesionario*.  
+
+```{r cars}
+library(readxl)
+base_concesionario <- read_excel("base_concesionario.xlsx")
+View(base_concesionario)
+```
+
+
+b. Realizar una exploración de la base de tal manera que se pueda definir cuántos clientes están registrados, qué variables están asociadas a los clientes. 
+
+```{r}
+summary(base_concesionario)
+
+table(base_concesionario$`NIVEL ESCOLAR`)
+
+```
+Tenemos en cuenta las variables persona, edad, sexo, estatura, nivel escolar, marca de auto, numero de hijos, salario y si tienen mascotas, hay en total 62 datos, aunque de estos hay 2 filas de datos faltantes, con la funcion table dice cuantas datos hay por variable
+
+c. Identificar y contar los datos faltantes que se tengan en la base de datos.  
+
+```{r}
+d<- is.na.data.frame(base_concesionario)
+
+summary(d)
+```
+la cantidad de datos que son iguales a TRUE son la cantidad de datos faltantes, que en total son 16
+
+d. Utilizar y aplicar estrategias que permitan identificar registros incompletos, valores inconsistentes y otras características que podrían afectar el análisis de los datos de la base.
+
+```{r}
+
+na<- colSums(is.na(base_concesionario))
+print(na)
+
+filas_con_na <- base_concesionario[!complete.cases(base_concesionario), ]
+print("Filas con valores NA:")
+print(filas_con_na)
+
+
+```
+
+
+
+##  Análisis de la variable "marca de auto"
+
+a. Evaluar la variable "Marca de auto" y determinar si hay datos faltantes, en caso de que los haya, se requiere proponer una metodología que permita tratar con este tipo de datos.  
+
+```{r}
+sum(is.na(base_concesionario$`MARCA DE AUTO`))
+
+base_concesionario$`MARCA DE AUTO`[is.na(base_concesionario$`MARCA DE AUTO`)] <- "DESCONOCIDO"
+
+table(base_concesionario$`MARCA DE AUTO`)
+
+```
+usamos el sum para ver la cantidad total de datos que son iguales a Na, lo que hicimos fue ca,biar los datos Na por la variable desconocidos con eso la funcion table sale mas completa
+
+b. Crear una tabla de frecuencias que permita determinar la preferencia en marcas de autos de los clientes.  
+
+```{r}
+tabla1<- table(base_concesionario$`MARCA DE AUTO`)
+
+print(tabla1)
+```
+
+
+d. Haciendo uso de la librería *ggplot2* de R, generar un gráfico de barras y de sectores que permita visualizar la distribución de las marcas de autos entre los clientes.  
+
+```{r}
+library(ggplot2)
+library(dplyr)
+
+conteo_marcas <- base_concesionario %>%
+  count(`MARCA DE AUTO`) %>%
+  rename(cantidad = n) %>%
+  mutate(porcentaje = round(cantidad / sum(cantidad) * 100, 1))
+
+conteo_marcas <- conteo_marcas %>%
+  filter(!is.na(`MARCA DE AUTO`))
+
+grafico_barras <- ggplot(conteo_marcas, aes(x = reorder(`MARCA DE AUTO`, -cantidad), y = cantidad, fill = `MARCA DE AUTO`)) +
+  geom_bar(stat = "identity") +
+  theme_minimal() +
+  labs(
+    title = "Distribución de marcas de autos entre los clientes",
+    x = "Marca de auto",
+    y = "Cantidad de clientes",
+    fill = "Marca"
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  geom_text(aes(label = cantidad), vjust = -0.5, size = 3.5)
+
+print(grafico_barras)
+```
+
+
+e. Proporcionar una conclusión a partir de la información que se haya extraído en el desarrollo de los numerales anteriores.
+
+1). Con el grafico vemos que hay datos repetidos pero estos al estar mal escritos hacen que el analisis se vuelva complejo, por lo que es fundamentl que la informacion sea clara
+
+##  Análisis de la variable edad
+
+a. Verificar si la variable edad está correctamente definida como tipo *numérico*.
+
+```{r}
+class(base_concesionario$EDAD)
+```
+
+b. Identificar algún tipo de anomalía en la variable y si es el caso corregirla.  
+
+```{r}
+
+base_concesionario$EDAD <- as.numeric(base_concesionario$EDAD)
+
+class(base_concesionario$EDAD)
+
+```
+
+c. Haciendo uso de la librería *ggplot2* de R, realizar un histogramas de la variable edad y describir características de distribución de la variable.
+
+```{r}
+histograma_edad <- ggplot(base_concesionario, aes(x = EDAD)) +
+  geom_histogram(binwidth = 5, fill = "skyblue", color = "black") +
+  labs(
+    title = "Distribución de edad de los clientes",
+    x = "Edad",
+    y = "Frecuencia"
+  ) +
+  theme_minimal()
+
+histograma_edad
+```
+
+
